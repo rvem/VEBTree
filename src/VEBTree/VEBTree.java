@@ -73,7 +73,7 @@ public class VEBTree implements IntegerSet {
     public void remove(long x) {
         if (x == min)  {
             if (isEmpty(aux)) {
-                max = min = 0;
+                max = min = NO;
                 return;
             }
             long minHigh = aux.getMin();
@@ -117,7 +117,7 @@ public class VEBTree implements IntegerSet {
         if (x > max) {
             return max;
         }
-        if (x <= min) {
+        if (x <= min || min == NO) {
             return NO;
         }
         long high = high(x), low = low(x);
