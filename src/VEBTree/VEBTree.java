@@ -1,31 +1,26 @@
 package VEBTree;
 
-import java.util.Arrays;
+import java.util.HashMap;
 
 public class VEBTree implements IntegerSet {
 
-    private int shift;
+    private int w, shift;
 
     private long min, max;
-    private IntegerSet[] ch;
+    //    private IntegerSet[] ch;
+    HashMap<Long, IntegerSet> ch;
     private IntegerSet aux;
 
 
     VEBTree(int w) {
+        this.w = w;
         shift = (w + 1) / 2;
         min = max = NO;
+        ch = new HashMap<>();
         if (w == 2) {
             aux = new NaiveVEBTree(w >> 1);
-            ch = new NaiveVEBTree[w];
-            for (int i = 0; i < w; i++) {
-                ch[i] = new NaiveVEBTree(w >> 1);
-            }
         } else {
             aux = new VEBTree(shift);
-            ch = new VEBTree[1 << (w >> 1)];
-            for (int i = 0; i < (1 << (w >> 1)); i++) {
-                ch[i] = new VEBTree(shift);
-            }
         }
     }
 
@@ -45,6 +40,15 @@ public class VEBTree implements IntegerSet {
         return set.getMin() == NO;
     }
 
+    private IntegerSet getChild() {
+        if (w == 2) {
+            return new NaiveVEBTree(w >> 1);
+        } else {
+            return new VEBTree(shift);
+        }
+    }
+
+
     @Override
     public void add(long x) {
         if (isEmpty(this)) {
@@ -63,36 +67,39 @@ public class VEBTree implements IntegerSet {
         }
 
         long high = high(x), low = low(x);
-        if (isEmpty(ch[(int) high])) {
+        ch.putIfAbsent(high, getChild());
+        if (isEmpty(ch.get(high))) {
             aux.add(high);
         }
-        ch[(int) high].add(low);
+        ch.get(high).add(low);
     }
 
     @Override
     public void remove(long x) {
-        if (x == min)  {
+        if (x == min) {
             if (isEmpty(aux)) {
                 max = min = NO;
                 return;
             }
             long minHigh = aux.getMin();
-            min = merge(minHigh, ch[(int) minHigh].getMin());
-            ch[(int) minHigh].remove(ch[(int) minHigh].getMin());
-            if (isEmpty(ch[(int) minHigh])) {
+            ch.putIfAbsent(minHigh, getChild());
+            min = merge(minHigh, ch.get(minHigh).getMin());
+            ch.get(minHigh).remove(ch.get(minHigh).getMin());
+            if (isEmpty(ch.get(minHigh))) {
                 aux.remove(minHigh);
             }
             return;
         }
         long high = high(x), low = low(x);
-        ch[(int) high].remove(low);
-        if (isEmpty(ch[(int) high])) {
+        ch.putIfAbsent(high, getChild());
+        ch.get(high).remove(low);
+        if (isEmpty(ch.get(high))) {
             aux.remove(high);
         }
         if (isEmpty(aux)) {
             max = min;
         } else {
-            max = merge(aux.getMax(), ch[(int) aux.getMax()].getMax());
+            max = merge(aux.getMax(), ch.get(aux.getMax()).getMax());
         }
     }
 
@@ -102,14 +109,16 @@ public class VEBTree implements IntegerSet {
             return min;
         }
         long high = high(x), low = low(x);
-        if (!isEmpty(ch[(int) high]) && low < ch[(int) high].getMin()) {
-            return merge(high, ch[(int) high].next(low));
+        ch.putIfAbsent(high, getChild());
+        if (!isEmpty(ch.get(high)) && low < ch.get(high).getMin()) {
+            return merge(high, ch.get(high).next(low));
         }
         long nextHigh = aux.next(high);
         if (nextHigh == NO) {
             return NO;
         }
-        return merge(nextHigh, ch[(int) nextHigh].getMin());
+        ch.putIfAbsent(nextHigh, getChild());
+        return merge(nextHigh, ch.get(nextHigh).getMin());
     }
 
     @Override
@@ -121,14 +130,16 @@ public class VEBTree implements IntegerSet {
             return NO;
         }
         long high = high(x), low = low(x);
-        if (!isEmpty(ch[(int) high]) && low > ch[(int) high].getMin()) {
-            return merge(high, ch[(int) high].prev(low));
+        ch.putIfAbsent(high, getChild());
+        if (!isEmpty(ch.get(high)) && low > ch.get(high).getMin()) {
+            return merge(high, ch.get(high).prev(low));
         }
         long prevHigh = aux.prev(high);
         if (prevHigh == NO) {
             return min;
         }
-        return merge(prevHigh, ch[(int) prevHigh].getMax());
+        ch.putIfAbsent(prevHigh, getChild());
+        return merge(prevHigh, ch.get(prevHigh).getMax());
     }
 
     @Override
