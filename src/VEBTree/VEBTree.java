@@ -8,17 +8,17 @@ public class VEBTree implements IntegerSet {
 
     private long min, max;
     //    private IntegerSet[] ch;
-    HashMap<Long, IntegerSet> ch;
+    private HashMap<Long, IntegerSet> ch;
     private IntegerSet aux;
 
 
-    VEBTree(int w) {
-        this.w = w;
+    VEBTree(int u) {
+        w = u;
         shift = (w + 1) / 2;
         min = max = NO;
         ch = new HashMap<>();
-        if (w == 2) {
-            aux = new NaiveVEBTree(w >> 1);
+        if (w <= 2) {
+            aux = new NaiveVEBTree(shift);
         } else {
             aux = new VEBTree(shift);
         }
@@ -41,8 +41,8 @@ public class VEBTree implements IntegerSet {
     }
 
     private IntegerSet getChild() {
-        if (w == 2) {
-            return new NaiveVEBTree(w >> 1);
+        if (w <= 2) {
+            return new NaiveVEBTree(shift);
         } else {
             return new VEBTree(shift);
         }
@@ -54,6 +54,9 @@ public class VEBTree implements IntegerSet {
         if (isEmpty(this)) {
             min = x;
             max = x;
+            return;
+        }
+        if (x == min) {
             return;
         }
         if (x < min) {
@@ -110,7 +113,7 @@ public class VEBTree implements IntegerSet {
         }
         long high = high(x), low = low(x);
         ch.putIfAbsent(high, getChild());
-        if (!isEmpty(ch.get(high)) && low < ch.get(high).getMin()) {
+        if (!isEmpty(ch.get(high)) && low < ch.get(high).getMax()) {
             return merge(high, ch.get(high).next(low));
         }
         long nextHigh = aux.next(high);
@@ -152,7 +155,7 @@ public class VEBTree implements IntegerSet {
         return max;
     }
 
-    private class NaiveVEBTree implements IntegerSet {
+    static class NaiveVEBTree implements IntegerSet {
         boolean[] a;
 
         NaiveVEBTree(int s) {
@@ -202,7 +205,7 @@ public class VEBTree implements IntegerSet {
             while (current >= 0 && !a[current]) {
                 --current;
             }
-            return current < a.length ? current : NO;
+            return current >= 0 ? (a[current] ? current : NO) : NO;
         }
     }
 }
